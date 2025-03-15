@@ -74,7 +74,27 @@ namespace JetracerController {
     void JetracerController::time_Callback() {
         auto odom_msg = nav_msgs::msg::Odometry();
         Odom odom_data = jetracer->getOdometry();
-        odom_msg.header.frame_id = "";
+        odom_msg.header.frame_id = "odom";
+        // pose
+        odom_msg.pose.pose.position.x = odom_data.position.x;
+        odom_msg.pose.pose.position.y = odom_data.position.y;
+        odom_msg.pose.pose.position.z = odom_data.position.z;
+        // orientation
+        odom_msg.pose.pose.orientation.x = odom_data.orientation.x;
+        odom_msg.pose.pose.orientation.y = odom_data.orientation.y;
+        odom_msg.pose.pose.orientation.z = odom_data.orientation.z;
+        // linear
+        odom_msg.twist.twist.linear.x = odom_data.linear.x;
+        odom_msg.twist.twist.linear.y = odom_data.linear.y;
+        odom_msg.twist.twist.linear.z = odom_data.linear.z;
+        // angular
+        odom_msg.twist.twist.angular.x = odom_data.angular.x;
+        odom_msg.twist.twist.angular.y = odom_data.angular.y;
+        odom_msg.twist.twist.angular.z = odom_data.angular.z;
+        // covarianc
+        odom_msg.twist.covariance = jetracer->getCovarianceOdometry().twist;
+        odom_msg.pose.covariance = jetracer->getCovarianceOdometry().pose;
+
         odom_publisher->publish(odom_msg);
 
         // imu
@@ -92,6 +112,10 @@ namespace JetracerController {
         imu_msg.orientation.x = imu_data.angle.x;
         imu_msg.orientation.y = imu_data.angle.y;
         imu_msg.orientation.z = imu_data.angle.z;
+        // covariance
+        imu_msg.angular_velocity_covariance = jetracer->getCovarianceImu().angularVelocity;
+        imu_msg.linear_acceleration_covariance = jetracer->getCovarianceImu().linearAcceleration;
+        imu_msg.orientation_covariance = jetracer->getCovarianceImu().orientation;
         imu_publisher->publish(imu_msg);
 
         MotorStates motorStates_data = jetracer->getMotorStates();

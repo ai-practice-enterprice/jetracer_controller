@@ -14,7 +14,7 @@
 namespace JetracerController {
     class JetracerSerial : public IJetracer {
     public:
-        explicit JetracerSerial(JetracerCreateInfo create_info);
+        explicit JetracerSerial(JetracerCreateInfo create_info, rclcpp::Logger logger);
         ~JetracerSerial() final;
 
         bool init() final;
@@ -78,7 +78,6 @@ namespace JetracerController {
         bool running = false;
 
         // ros
-        rclcpp::Logger logger;
         rclcpp::Clock clock;
     };
 } // jetracerController

@@ -12,16 +12,16 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 
-add_executable(jetracer_controller_node
+add_executable(jetracer_controller
         src/JetracerController.cpp
         src/JetracerMock.cpp
         src/JetracerSerial.cpp
 )
-target_include_directories(jetracer_controller_node PUBLIC
+target_include_directories(jetracer_controller PUBLIC
         include
 )
-ament_target_dependencies(jetracer_controller_node rclcpp geometry_msgs sensor_msgs nav_msgs)
-target_link_libraries(jetracer_controller_node "${cpp_typesupport_target}")
+ament_target_dependencies(jetracer_controller rclcpp geometry_msgs sensor_msgs nav_msgs)
+target_link_libraries(jetracer_controller "${cpp_typesupport_target}")
 
 if (BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
@@ -31,13 +31,16 @@ if (BUILD_TESTING)
 endif ()
 
 install(TARGETS
-        jetracer_controller_node
+        jetracer_controller
         DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY
-        conf/
+        config/
         DESTINATION share/${PROJECT_NAME}/config
 )
+
+install(DIRECTORY launch/
+        DESTINATION share/${PROJECT_NAME})
 
 ament_package()

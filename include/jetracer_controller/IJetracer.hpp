@@ -4,6 +4,7 @@
 
 #ifndef IJETRACER_HPP
 #define IJETRACER_HPP
+#include <rclcpp/rclcpp.hpp>
 
 namespace JetracerController {
     struct JetracerCreateInfo {
@@ -58,6 +59,7 @@ namespace JetracerController {
 
     class IJetracer {
     public:
+        IJetracer(rclcpp::Logger logger) : logger_(logger)  {}
         virtual ~IJetracer() = default;
 
         virtual bool init() = 0;
@@ -74,6 +76,12 @@ namespace JetracerController {
         virtual IMU getIMU() = 0;
         virtual Odom getOdometry() = 0;
         virtual MotorStates getMotorStates() = 0;
+
+        protected:
+            rclcpp::Logger get_logger() {return logger_;}
+
+        private:
+            rclcpp::Logger logger_;
     };
 }
 #endif //IJETRACER_HPP

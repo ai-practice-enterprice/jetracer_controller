@@ -11,7 +11,7 @@
 namespace JetracerController {
     class JetracerMock : public IJetracer {
     public:
-        explicit JetracerMock(JetracerCreateInfo create_info);
+        explicit JetracerMock(JetracerCreateInfo create_info, rclcpp::Logger logger);
         ~JetracerMock() final;
 
         bool init() final;
@@ -47,8 +47,6 @@ namespace JetracerController {
         IMU imu;
         Odom odom;
         MotorStates motorStates;
-        // ros
-        rclcpp::Logger logger;
     };
 } // jetracerController
 

@@ -27,24 +27,23 @@ namespace JetracerController {
 
         // create jetson interface
         JetracerCreateInfo create_info;
-        this->get_parameter("serial_port", create_info.serial_port);
-        this->get_parameter("baud_rate", create_info.baud_rate);
-        this->get_parameter("kp", create_info.kp);
-        this->get_parameter("ki", create_info.ki);
-        this->get_parameter("kd", create_info.kd);
-        this->get_parameter("linear_correction", create_info.linear_correction);
-        this->get_parameter("servo_bias", create_info.servo_bias);
-        this->get_parameter("a", create_info.a);
-        this->get_parameter("b", create_info.b);
-        this->get_parameter("c", create_info.c);
-        this->get_parameter("d", create_info.d);
+        create_info.serial_port = this->get_parameter("serial_port").as_string();
+        create_info.baud_rate = this->get_parameter("baud_rate").as_int();
+        create_info.kp = this->get_parameter("kp").as_int();
+        create_info.ki = this->get_parameter("ki").as_int();
+        create_info.kd = this->get_parameter("kd").as_int();
+        create_info.linear_correction = this->get_parameter("linear_correction").as_double();
+        create_info.servo_bias = this->get_parameter("servo_bias").as_int();
+        create_info.a = this->get_parameter("a").as_double();
+        create_info.b = this->get_parameter("b").as_double();
+        create_info.c = this->get_parameter("c").as_double();
+        create_info.d = this->get_parameter("d").as_double();
 
-        bool mock;
-        this->get_parameter("mock", mock);
+        bool mock = this->get_parameter("mock").as_bool();
         if (mock) {
-            jetracer = std::make_unique<JetracerMock>(create_info);
+            jetracer = std::make_unique<JetracerMock>(create_info, this->get_logger());
         } else {
-            jetracer = std::make_unique<JetracerSerial>(create_info);
+            jetracer = std::make_unique<JetracerSerial>(create_info, this->get_logger());
         }
         // setup publishers
         odom_publisher = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -75,7 +74,7 @@ namespace JetracerController {
     void JetracerController::time_Callback() {
         auto odom_msg = nav_msgs::msg::Odometry();
         Odom odom_data = jetracer->getOdometry();
-        //odom_msg.header.frame_id = "";
+        odom_msg.header.frame_id = "";
         odom_publisher->publish(odom_msg);
 
         // imu

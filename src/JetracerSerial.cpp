@@ -6,12 +6,12 @@
 #include <rclcpp/rclcpp.hpp>
 
 namespace JetracerController {
-    JetracerSerial::JetracerSerial(JetracerCreateInfo create_info)
-        : serial_port(create_info.serial_port), baud_rate(create_info.baud_rate),
+    JetracerSerial::JetracerSerial(JetracerCreateInfo create_info, rclcpp::Logger logger)
+        : IJetracer(logger), serial_port(create_info.serial_port), baud_rate(create_info.baud_rate),
           kp(create_info.kp), ki(create_info.ki), kd(create_info.kd),
           linear_correction(create_info.linear_correction), servo_bias(create_info.servo_bias),
           a(create_info.a), b(create_info.b), c(create_info.c), d(create_info.d),
-          sp(iosev), logger(rclcpp::get_logger("jetracer_interface")) {
+          sp(iosev) {
     }
 
     JetracerSerial::~JetracerSerial() {
@@ -21,11 +21,11 @@ namespace JetracerController {
                 sp.close();
             }
             else {
-                RCLCPP_ERROR(this->logger, "Serial port is not opened");
+                RCLCPP_ERROR(this->get_logger(), "Serial port is not opened");
             }
         }
         catch (const std::exception& e) {
-            RCLCPP_ERROR(this->logger, "Exception closing serial port: %s", e.what());
+            RCLCPP_ERROR(this->get_logger(), "Exception closing serial port: %s", e.what());
         }
     }
 
@@ -36,7 +36,7 @@ namespace JetracerController {
             boost::system::error_code ec;
             sp.open(serial_port, ec);
             if (ec) {
-                RCLCPP_FATAL(this->logger, "Failed to open serial port: %s", ec.message().c_str());
+                RCLCPP_FATAL(this->get_logger(), "Failed to open serial port: %s", ec.message().c_str());
                 return false;
             }
 
@@ -46,21 +46,21 @@ namespace JetracerController {
             sp.set_option(boost::asio::serial_port::parity(boost::asio::serial_port::parity::none));
             sp.set_option(boost::asio::serial_port::stop_bits(boost::asio::serial_port::stop_bits::one));
             sp.set_option(boost::asio::serial_port::character_size(8));
-            RCLCPP_INFO(this->logger, "Serial port opened successfully");
+            RCLCPP_INFO(this->get_logger(), "Serial port opened successfully");
 
             // set params and coefficients
             if (!SetParams(kp, ki, kd, linear_correction, servo_bias)) {
-                RCLCPP_ERROR(this->logger, "Failed to set controller parameters");
+                RCLCPP_ERROR(this->get_logger(), "Failed to set controller parameters");
                 return false;
             }
             if (!SetCoefficient(a, b, c, d)) {
-                RCLCPP_ERROR(this->logger, "Failed to set coefficients");
+                RCLCPP_ERROR(this->get_logger(), "Failed to set coefficients");
                 return false;
             }
-            RCLCPP_INFO(this->logger, "Params and coefficients set successfully");
+            RCLCPP_INFO(this->get_logger(), "Params and coefficients set successfully");
         }
         catch (const std::exception& e) {
-            RCLCPP_FATAL(this->logger, "Exception opening serial port: %s", e.what());
+            RCLCPP_FATAL(this->get_logger(), "Exception opening serial port: %s", e.what());
             return false;
         }
         return true;
@@ -99,7 +99,7 @@ namespace JetracerController {
             write(sp, boost::asio::buffer(tmp, 11));
         }
         catch (const std::exception& e) {
-            RCLCPP_ERROR(this->logger, "Exception write Velocity to serial port: %s", e.what());
+            RCLCPP_ERROR(this->get_logger(), "Exception write Velocity to serial port: %s", e.what());
             return false;
         }
         return true;
@@ -133,7 +133,7 @@ namespace JetracerController {
             write(sp, boost::asio::buffer(tmp, 15));
         }
         catch (const std::exception& e) {
-            RCLCPP_ERROR(this->logger, "Exception write Params to serial port: %s", e.what());
+            RCLCPP_ERROR(this->get_logger(), "Exception write Params to serial port: %s", e.what());
             return false;
         }
         return true;
@@ -171,7 +171,7 @@ namespace JetracerController {
             write(sp, boost::asio::buffer(tmp, 21));
         }
         catch (const std::exception& e) {
-            RCLCPP_ERROR(this->logger, "Exception write Coefficients to serial port: %s", e.what());
+            RCLCPP_ERROR(this->get_logger(), "Exception write Coefficients to serial port: %s", e.what());
             return false;
         }
         return true;
@@ -184,11 +184,11 @@ namespace JetracerController {
 
         frameState state = State_Head1;
 
-        uint8_t frame_size, frame_sum, frame_type;
+        uint8_t frame_size, frame_sum, frame_type [[maybe_unused]];
         uint8_t data[50];
         rclcpp::Time previousTime;
 
-        RCLCPP_INFO(logger, "Starting serial receive task");
+        RCLCPP_INFO(this->get_logger(), "Starting serial receive task");
 
         while (running) {
             // State machine
@@ -201,7 +201,7 @@ namespace JetracerController {
                 state = (data[0] == HEAD1 ? State_Head2 : State_Head1);
                 if (state == State_Head1) {
                     // couldn't find header
-                    RCLCPP_DEBUG(logger, "Received invalid header1: 0x%02X", data[0]);
+                    RCLCPP_DEBUG(this->get_logger(), "Received invalid header1: 0x%02X", data[0]);
                 }
                 break;
 
@@ -210,7 +210,7 @@ namespace JetracerController {
                 state = (data[1] == HEAD2 ? State_Size : State_Head1);
                 if (state == State_Head1) {
                     // couldn't find header2
-                    RCLCPP_DEBUG(logger, "Received invalid header2: 0x%02X", data[1]);
+                    RCLCPP_DEBUG(this->get_logger(), "Received invalid header2: 0x%02X", data[1]);
                 }
                 break;
 
@@ -231,7 +231,7 @@ namespace JetracerController {
                 frame_sum = checksum(data, frame_size - 1);
                 state = data[frame_size - 1] == frame_sum ? State_Handle : State_Head1;
                 if (state == State_Head1) {
-                    RCLCPP_WARN(logger, "Checksum error! Received: 0x%02X, Calculated: 0x%02X",
+                    RCLCPP_WARN(this->get_logger(), "Checksum error! Received: 0x%02X, Calculated: 0x%02X",
                                 data[frame_size -1], frame_sum);
                 }
                 break;
@@ -285,8 +285,6 @@ namespace JetracerController {
                         motorStates.motor_rvel = (double)((int16_t)(data[36]*256+data[37]));
                         motorStates.motor_lset = (double)((int16_t)(data[38]*256+data[39]));
                         motorStates.motor_rset = (double)((int16_t)(data[40]*256+data[41]));
-                        RCLCPP_INFO(logger, "Motors: lvel=%f rvel=%f lset=%f rset=%f",
-                            motorStates.motor_lvel, motorStates.motor_rvel, motorStates.motor_lset, motorStates.motor_rset);
                     }
                     previousTime = currentTime;
                 }

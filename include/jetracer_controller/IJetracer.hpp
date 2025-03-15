@@ -36,25 +36,25 @@ namespace JetracerController {
     };
 
     struct CovarianceImu {
-        float orientation[9] = {1e6, 0, 0, 0, 1e6, 0, 0, 0, 0.05};
-        float angularVelocity[9] = {1e6, 0, 0, 0, 1e6, 0, 0, 0, 1e6};
-        float linearAcceleration[9] = {1e-2, 0, 0, 0, 0, 0, 0, 0, 0};
+        std::array<double, 9> orientation = {1e6, 0, 0, 0, 1e6, 0, 0, 0, 0.05};
+        std::array<double, 9> angularVelocity = {1e6, 0, 0, 0, 1e6, 0, 0, 0, 1e6};
+        std::array<double, 9> linearAcceleration = {1e-2, 0, 0, 0, 0, 0, 0, 0, 0};
     };
 
     struct CovarianceOdometry {
-        float twist[36] = {1e-9, 0,    0,    0,   0,   0,
-                           0,    1e-3, 1e-9, 0,   0,   0,
-                           0,    0,    1e6,  0,   0,   0,
-                           0,    0,    0,    1e6, 0,   0,
-                           0,    0,    0,    0,   1e6, 0,
-                           0,    0,    0,    0,   0,   0.1 };
+        std::array<double, 36> twist = {1e-9, 0,    0,    0,   0,   0,
+                                        0,    1e-3, 1e-9, 0,   0,   0,
+                                        0,    0,    1e6,  0,   0,   0,
+                                        0,    0,    0,    1e6, 0,   0,
+                                        0,    0,    0,    0,   1e6, 0,
+                                        0,    0,    0,    0,   0,   0.1};
 
-        float pose[36] = { 1e-9, 0,    0,    0,   0,   0,
-                           0,    1e-3, 1e-9, 0,   0,   0,
-                           0,    0,    1e6,  0,   0,   0,
-                           0,    0,    0,    1e6, 0,   0,
-                           0,    0,    0,    0,   1e6, 0,
-                           0,    0,    0,    0,   0,   1e3 };
+        std::array<double, 36> pose = {1e-9, 0,    0,    0,   0,   0,
+                                       0,    1e-3, 1e-9, 0,   0,   0,
+                                       0,    0,    1e6,  0,   0,   0,
+                                       0,    0,    0,    1e6, 0,   0,
+                                       0,    0,    0,    0,   1e6, 0,
+                                       0,    0,    0,    0,   0,   1e3};
     };
 
     class IJetracer {

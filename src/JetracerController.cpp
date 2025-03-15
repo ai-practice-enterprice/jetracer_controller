@@ -5,6 +5,7 @@
 #include "jetracer_controller/JetracerController.h"
 #include "jetracer_controller/JetracerSerial.h"
 #include "jetracer_controller/JetracerMock.h"
+#include "tf2/LinearMath/Quaternion.h"
 
 namespace JetracerController {
     JetracerController::JetracerController()  : Node("jetracer_control") {
@@ -53,6 +54,9 @@ namespace JetracerController {
         motorLset_publisher = this->create_publisher<std_msgs::msg::Int32>("motor/lset", 10);
         motorRset_publisher = this->create_publisher<std_msgs::msg::Int32>("motor/rset", 10);
 
+        // tf2 broadcaster
+        tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
         // init the jetracer interface
         this->init();
     }
@@ -72,10 +76,50 @@ namespace JetracerController {
     }
 
     void JetracerController::time_Callback() {
+        // odom
         auto odom_msg = nav_msgs::msg::Odometry();
         Odom odom_data = jetracer->getOdometry();
-        odom_msg.header.frame_id = "";
+        odom_msg.header.frame_id = "odom";
+        // position
+        odom_msg.pose.pose.position.x = odom_data.position.x;
+        odom_msg.pose.pose.position.y = odom_data.position.y;
+        odom_msg.pose.pose.position.z = odom_data.position.z;
+        // orientation
+        odom_msg.pose.pose.orientation.x = odom_data.orientation.x;
+        odom_msg.pose.pose.orientation.y = odom_data.orientation.y;
+        odom_msg.pose.pose.orientation.z = odom_data.orientation.z;
+        // linear
+        odom_msg.twist.twist.linear.x = odom_data.linear.x;
+        odom_msg.twist.twist.linear.y = odom_data.linear.y;
+        odom_msg.twist.twist.linear.z = odom_data.linear.z;
+        // angular
+        odom_msg.twist.twist.angular.x = odom_data.angular.x;
+        odom_msg.twist.twist.angular.y = odom_data.angular.y;
+        odom_msg.twist.twist.angular.z = odom_data.angular.z;
+        // covarianc
+        odom_msg.twist.covariance = jetracer->getCovarianceOdometry().twist;
+        odom_msg.pose.covariance = jetracer->getCovarianceOdometry().pose;
         odom_publisher->publish(odom_msg);
+
+        // odom tf2 frame
+        geometry_msgs::msg::TransformStamped t;
+        t.header.stamp = this->get_clock()->now();
+        t.header.frame_id = "odom";
+        t.child_frame_id = "base_link";
+
+        // position
+        t.transform.translation.x = odom_data.position.x;
+        t.transform.translation.y = odom_data.position.y;
+        t.transform.translation.z = odom_data.position.z;
+        // orientation
+        tf2::Quaternion quat;
+        quat.setRPY(odom_data.orientation.x, odom_data.orientation.y, odom_data.orientation.z);
+        t.transform.rotation.x = quat.x();
+        t.transform.rotation.y = quat.y();
+        t.transform.rotation.z = quat.z();
+        t.transform.rotation.w = quat.w();
+
+        tf_broadcaster->sendTransform(t);
 
         // imu
         auto imu_msg = sensor_msgs::msg::Imu();
@@ -92,6 +136,10 @@ namespace JetracerController {
         imu_msg.orientation.x = imu_data.angle.x;
         imu_msg.orientation.y = imu_data.angle.y;
         imu_msg.orientation.z = imu_data.angle.z;
+        // covariance
+        imu_msg.angular_velocity_covariance = jetracer->getCovarianceImu().angularVelocity;
+        imu_msg.linear_acceleration_covariance = jetracer->getCovarianceImu().linearAcceleration;
+        imu_msg.orientation_covariance = jetracer->getCovarianceImu().orientation;
         imu_publisher->publish(imu_msg);
 
         MotorStates motorStates_data = jetracer->getMotorStates();

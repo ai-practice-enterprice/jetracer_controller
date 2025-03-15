@@ -1,4 +1,0 @@
-source;share/jetracer_controller/local_setup.bash
-source;share/jetracer_controller/local_setup.dsv
-source;share/jetracer_controller/local_setup.sh
-source;share/jetracer_controller/local_setup.zsh

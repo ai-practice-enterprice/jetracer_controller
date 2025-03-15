@@ -11,6 +11,8 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 add_executable(jetracer_controller
         src/JetracerController.cpp
@@ -20,7 +22,7 @@ add_executable(jetracer_controller
 target_include_directories(jetracer_controller PUBLIC
         include
 )
-ament_target_dependencies(jetracer_controller rclcpp geometry_msgs sensor_msgs nav_msgs)
+ament_target_dependencies(jetracer_controller rclcpp geometry_msgs sensor_msgs nav_msgs tf2 tf2_ros)
 target_link_libraries(jetracer_controller "${cpp_typesupport_target}")
 
 if (BUILD_TESTING)
